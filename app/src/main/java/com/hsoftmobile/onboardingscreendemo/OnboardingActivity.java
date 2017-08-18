@@ -1,19 +1,20 @@
 package com.hsoftmobile.onboardingscreendemo;
 
+import android.animation.ArgbEvaluator;
+import android.content.Context;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 public class OnboardingActivity extends AppCompatActivity {
@@ -33,13 +34,35 @@ public class OnboardingActivity extends AppCompatActivity {
 	 */
 	private ViewPager mViewPager;
 
+	private ArgbEvaluator evaluator = new ArgbEvaluator();
+
+	private ImageView[] indicators;
+
+	private int currentPage;
+
+	private Context thisActivity;
+
+	private static int[] images = new int[]{
+			R.drawable.city_02,
+			R.drawable.city_03,
+			R.drawable.city_04
+	};
+	private static String[] titles = new String[]{
+			"Step 1",
+			"Step 2",
+			"Step 3",
+	};
+	private static String[] texts = new String[]{
+			"Maecenas faucibus mollis interdum.",
+			"Integer posuere erat a ante venenatis dapibus posuere velit aliquet.",
+			"Sed posuere consectetur est at lobortis."
+	};
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_onboarding);
 
-		Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-		setSupportActionBar(toolbar);
 		// Create the adapter that will return a fragment for each of the three
 		// primary sections of the activity.
 		mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
@@ -48,39 +71,78 @@ public class OnboardingActivity extends AppCompatActivity {
 		mViewPager = (ViewPager) findViewById(R.id.container);
 		mViewPager.setAdapter(mSectionsPagerAdapter);
 
+		currentPage = 0;
+		thisActivity = this;
 
-		FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-		fab.setOnClickListener(new View.OnClickListener() {
+		// bind widgets
+		Button introBtnSkip = (Button) findViewById(R.id.intro_btn_skip);
+		indicators = new ImageView[]{
+				(ImageView) findViewById(R.id.page_indicator_0),
+				(ImageView) findViewById(R.id.page_indicator_1),
+				(ImageView) findViewById(R.id.page_indicator_2)
+		};
+		final ImageButton introBtnNext = (ImageButton) findViewById(R.id.intro_btn_next);
+		final Button introBtnFinish = (Button) findViewById(R.id.intro_btn_finish);
+
+		introBtnSkip.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
-				Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-						.setAction("Action", null).show();
+				finish();
 			}
 		});
 
+		introBtnNext.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View view) {
+				currentPage++;
+				mViewPager.setCurrentItem(currentPage, true);
+			}
+		});
+
+		introBtnFinish.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View view) {
+				finish();
+				// save preference
+				Common.saveSharedSetting(thisActivity, Common.PREF_USER_FIRST_TIME, "false");
+			}
+		});
+
+		// page update
+		final int[] colorList = new int[]{
+				ContextCompat.getColor(this, R.color.cyan),
+				ContextCompat.getColor(this, R.color.orange),
+				ContextCompat.getColor(this, R.color.green)
+		};
+		final int maxPosition = colorList.length - 1;
+		mViewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+			@Override
+			public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+				// color update
+				int endPosition = (position == maxPosition ? position : position + 1);
+				int colorUpdate = (Integer) evaluator.evaluate(positionOffset, colorList[position], colorList[endPosition]);
+				mViewPager.setBackgroundColor(colorUpdate);
+			}
+
+			@Override
+			public void onPageSelected(int position) {
+				currentPage = position;
+				updateIndicatos(currentPage);
+				mViewPager.setBackgroundColor(colorList[currentPage]);
+				introBtnNext.setVisibility( (position == maxPosition) ? View.GONE : View.VISIBLE );
+				introBtnFinish.setVisibility( (position == maxPosition) ? View.VISIBLE : View.GONE );
+			}
+
+			@Override
+			public void onPageScrollStateChanged(int state) {}
+		});
 	}
 
-
-	@Override
-	public boolean onCreateOptionsMenu(Menu menu) {
-		// Inflate the menu; this adds items to the action bar if it is present.
-		getMenuInflater().inflate(R.menu.menu_onboarding, menu);
-		return true;
-	}
-
-	@Override
-	public boolean onOptionsItemSelected(MenuItem item) {
-		// Handle action bar item clicks here. The action bar will
-		// automatically handle clicks on the Home/Up button, so long
-		// as you specify a parent activity in AndroidManifest.xml.
-		int id = item.getItemId();
-
-		//noinspection SimplifiableIfStatement
-		if (id == R.id.action_settings) {
-			return true;
+	private void updateIndicatos(int position) {
+		for (int i = 0; i < indicators.length; i++) {
+			int bgResId = (i == position) ? R.drawable.indicator_selected : R.drawable.indicator_unselected;
+			indicators[i].setBackgroundResource(bgResId);
 		}
-
-		return super.onOptionsItemSelected(item);
 	}
 
 	/**
@@ -112,8 +174,17 @@ public class OnboardingActivity extends AppCompatActivity {
 		public View onCreateView(LayoutInflater inflater, ViewGroup container,
 								 Bundle savedInstanceState) {
 			View rootView = inflater.inflate(R.layout.fragment_onboarding, container, false);
-			TextView textView = (TextView) rootView.findViewById(R.id.section_label);
-			textView.setText(getString(R.string.section_format, getArguments().getInt(ARG_SECTION_NUMBER)));
+
+			int sectionIndex = getArguments().getInt(ARG_SECTION_NUMBER) - 1;
+
+			ImageView centerImage = (ImageView) rootView.findViewById(R.id.center_image);
+			TextView pageTitle = (TextView) rootView.findViewById(R.id.page_title);
+			TextView pageText = (TextView) rootView.findViewById(R.id.page_text);
+
+			centerImage.setBackgroundResource(images[sectionIndex]);
+			pageTitle.setText(titles[sectionIndex]);
+			pageText.setText(texts[sectionIndex]);
+
 			return rootView;
 		}
 	}
@@ -143,15 +214,7 @@ public class OnboardingActivity extends AppCompatActivity {
 
 		@Override
 		public CharSequence getPageTitle(int position) {
-			switch (position) {
-				case 0:
-					return "SECTION 1";
-				case 1:
-					return "SECTION 2";
-				case 2:
-					return "SECTION 3";
-			}
-			return null;
+			return "SECTION";
 		}
 	}
 }

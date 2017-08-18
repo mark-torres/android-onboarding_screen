@@ -6,7 +6,6 @@
 												 android:layout_width="match_parent"
 												 android:layout_height="match_parent"
 												 android:fitsSystemWindows="true"
-												 android:background="@android:color/background_dark"
 												 tools:context="com.hsoftmobile.onboardingscreendemo.OnboardingActivity">
 
 	<android.support.v4.view.ViewPager
@@ -48,7 +47,7 @@
 				android:id="@+id/page_indicator_0"
 				android:layout_marginEnd="4dp"
 				android:layout_marginRight="4dp"
-				android:background="@drawable/indicator_unselected"
+				android:background="@drawable/indicator_selected"
 				android:layout_width="8dp"
 				android:layout_height="8dp"/>
 
@@ -73,11 +72,12 @@
 		<Button
 			android:id="@+id/intro_btn_finish"
 			style="@style/Base.Widget.AppCompat.Button.Borderless"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
 			android:layout_gravity="end|center"
 			android:text="Finish"
-			android:visibility="gone"
-			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"/>
+			android:textColor="@android:color/white"
+			android:visibility="gone"/>
 
 		<ImageButton
 			android:id="@+id/intro_btn_next"
